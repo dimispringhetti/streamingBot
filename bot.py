@@ -3,6 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 import logging
 from dotenv import load_dotenv
 import os
+from database import add_user
 
 # Carica le variabili dal file .env
 load_dotenv()
@@ -11,9 +12,9 @@ load_dotenv()
 TOKEN = os.getenv("TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
 
-
 intro = "Benvenuto nel bot di Dolly Mitra Movies. \nQuesto bot ti permette di cercare i film che ti interessano e di ricevere l'url del file per poterli guardare. \nPer cercare un film, digita il nome del film che ti interessa."
 reject = "Non sei autorizzato ad utilizzare il bot.\n"
+still_present = "Il tuo account è già presente nel database. Sei autorizzato a utilizzare il bot.\n"
 
 # Imposta il logging
 logging.basicConfig(
@@ -60,18 +61,27 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     # Gestione della risposta in base al pulsante premuto
     if action == 'approve':
-        # Invio di messaggio di approvazione all'utente
+        # Aggiungi l'utente alla lista degli utenti
+        if  not await add_user(query.from_user.id, query.from_user.username, query.from_user.first_name): # Se l'utente è già presente
+            await query.edit_message_text(text="Utente già presente!")
+            await context.bot.send_message(chat_id=int(chat_id), text=still_present)
+            return
+        # Invio di messaggio di benvenuto all'utente
         await context.bot.send_message(chat_id=int(chat_id), text=intro)
+        # Invio di messaggio di approvazione all'admin
         await query.edit_message_text(text="Utente approvato!")
+
         
     elif action == 'reject':
         # Invio di messaggio di rifiuto all'utente
         await context.bot.send_message(chat_id=int(chat_id), text=reject)
+        # Invio di messaggio di rifiuto all'admin
         await query.edit_message_text(text="Utente rifiutato!")
 
 
+
 def main() -> None:
-    application = Application.builder().token("7384437050:AAFcv89Jxysh_fmtwT5TMgew-efDglzbYQU").build()
+    application = Application.builder().token(TOKEN).build()
 
     # Aggiunge il CommandHandler per il comando /start
     application.add_handler(CommandHandler("start", start))
