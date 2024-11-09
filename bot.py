@@ -4,6 +4,7 @@ import logging
 from dotenv import load_dotenv
 import os
 from database import add_user, is_user_not_approved, is_user_present, add_not_approved
+from search import search_movie
 
 # Carica le variabili dal file .env
 load_dotenv()
@@ -78,7 +79,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         # Invio di messaggio di approvazione all'admin
         await query.edit_message_text(text="Utente approvato!")
 
-        
     elif action == 'reject':
         # Aggiungi l'utente alla lista degli utenti non approvati
         await add_not_approved(int(chat_id), query.from_user.username, query.from_user.first_name)
@@ -88,11 +88,42 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await query.edit_message_text(text="Utente rifiutato!")
 
 
+# comando search
+async def search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    chat_id = update.effective_chat.id
+
+    # non autorizzato
+    if not is_user_present(chat_id):
+        await context.bot.send_message(chat_id=chat_id, text=reject)
+        return
+
+    # estrai il testo del messaggio
+    text = update.message.text
+    # rimuovi /search dal testo
+    text = text.replace("/search", "")
+
+    # se il testo è vuoto, invia un messaggio di errore
+    if not text:
+        await context.bot.send_message(chat_id=chat_id, text="Inserisci il nome del film che vuoi cercare. (es. /search Deadpool)")
+        return
+    
+    # cerca il film
+    result = search_movie(text)
+
+    if result == None:
+        ans = "Film non trovato."
+    else:
+        ans = result
+
+    # invia il risultato della ricerca
+    await context.bot.send_message(chat_id=chat_id, text=f"Codice del film: {ans}")
+
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
 
-    # Aggiunge il CommandHandler per il comando /start
+    # Aggiunge il CommandHandler per i comandi
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("search", search))
 
     # Aggiunge il CallbackQueryHandler per gestire i pulsanti
     application.add_handler(CallbackQueryHandler(button_callback))
