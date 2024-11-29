@@ -1,9 +1,8 @@
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 import logging
 from dotenv import load_dotenv
 import os
-from search import command_search
+from command_search import command_search
 from new_user import command_start, button_approve_callback
 
 # Carica le variabili dal file .env

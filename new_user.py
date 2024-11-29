@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 from database import add_user, is_user_not_approved, is_user_present, add_not_approved
 from util import intro, reject, still_present
+import logging
 
 # Carica le variabili dal file .env
 load_dotenv()
